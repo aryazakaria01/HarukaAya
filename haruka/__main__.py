@@ -30,17 +30,17 @@ GDPR = []
 importlib.import_module("haruka.modules.tr_engine.language")
 
 for module_name in ALL_MODULES:
-    imported_module = importlib.import_module("haruka.modules." + module_name)
+    imported_module = importlib.import_module(f'haruka.modules.{module_name}')
     modname = imported_module.__name__.split('.')[2]
 
-    if not modname.lower() in IMPORTED:
+    if modname.lower() not in IMPORTED:
         IMPORTED[modname.lower()] = imported_module
     else:
         raise Exception(
             "Can't have two modules with the same name! Please change one")
 
     if hasattr(imported_module, "__help__") and imported_module.__help__:
-        HELPABLE[modname.lower()] = tld(0, "modname_" + modname).strip()
+        HELPABLE[modname.lower()] = tld(0, f'modname_{modname}').strip()
 
     # Chats to migrate on chat_migrated events
     if hasattr(imported_module, "__migrate__"):
@@ -87,7 +87,7 @@ def start(bot: Bot, update: Update, args: List[str]):
     chat = update.effective_chat
     # query = update.callback_query #Unused variable
     if update.effective_chat.type == "private":
-        if len(args) >= 1:
+        if args:
             if args[0].lower() == "help":
                 send_help(
                     update.effective_chat.id,
@@ -142,13 +142,9 @@ def send_start(bot, update):
 def error_callback(bot, update, error):
     try:
         raise error
-    except Unauthorized:
+    except (Unauthorized, BadRequest):
         LOGGER.warning(error)
         # remove update.message.chat_id from conversation list
-    except BadRequest:
-        LOGGER.warning(error)
-
-        # handle malformed requests - read more below!
     except TimedOut:
         LOGGER.warning("NO NONO3")
         # handle slow connection problems
@@ -174,7 +170,7 @@ def help_button(bot: Bot, update: Update):
     try:
         if mod_match:
             module = mod_match.group(1)
-            mod_name = tld(chat.id, "modname_" + module).strip()
+            mod_name = tld(chat.id, f'modname_{module}').strip()
             help_txt = tld(
                 chat.id, module +
                 "_help")  # tld_help(chat.id, HELPABLE[module].__mod_name__)
@@ -226,13 +222,11 @@ def help_button(bot: Bot, update: Update):
         bot.answer_callback_query(query.id)
         query.message.delete()
     except BadRequest as excp:
-        if excp.message == "Message is not modified":
-            pass
-        elif excp.message == "Query_id_invalid":
-            pass
-        elif excp.message == "Message can't be deleted":
-            pass
-        else:
+        if excp.message not in [
+            "Message is not modified",
+            "Query_id_invalid",
+            "Message can't be deleted",
+        ]:
             LOGGER.exception("Exception in help buttons. %s", str(query.data))
 
 
@@ -256,12 +250,12 @@ def get_help(bot: Bot, update: Update):
         mod_name = None
         for x in HELPABLE:
             if args[1].lower() == HELPABLE[x].lower():
-                mod_name = tld(chat.id, "modname_" + x).strip()
+                mod_name = tld(chat.id, f'modname_{x}').strip()
                 module = x
                 break
 
         if mod_name:
-            help_txt = tld(chat.id, module + "_help")
+            help_txt = tld(chat.id, f'{module}_help')
 
             if not help_txt:
                 LOGGER.exception(f"Help string for {module} not found!")

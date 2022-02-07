@@ -7,17 +7,16 @@ from haruka.modules.sql.locales_sql import prev_locale
 
 LANGUAGES = ['en-US', 'en-GB', 'id', 'ru']
 
-strings = {}
-
-for i in LANGUAGES:
-    strings[i] = yaml.full_load(
-        open(os.path.dirname(__file__) + f"/../locales/{i}.yml", "r"))
+strings = {
+    i: yaml.full_load(
+        open(os.path.dirname(__file__) + f"/../locales/{i}.yml", "r")
+    )
+    for i in LANGUAGES
+}
 
 
 def tld(chat_id, t, show_none=True):
-    LANGUAGE = prev_locale(chat_id)
-
-    if LANGUAGE:
+    if LANGUAGE := prev_locale(chat_id):
         LOCALE = LANGUAGE.locale_name
         if LOCALE in ('en-US') and t in strings['en-US']:
             result = decode(
@@ -52,9 +51,7 @@ def tld(chat_id, t, show_none=True):
 
 
 def tld_list(chat_id, t):
-    LANGUAGE = prev_locale(chat_id)
-
-    if LANGUAGE:
+    if LANGUAGE := prev_locale(chat_id):
         LOCALE = LANGUAGE.locale_name
         if LOCALE in ('en-US') and t in strings['en-US']:
             return strings['en-US'][t]

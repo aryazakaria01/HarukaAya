@@ -44,8 +44,7 @@ ENUM_FUNC_MAP = {
 def get(bot, update, notename, show_none=True, no_format=False):
     chat = update.effective_chat
     user = update.effective_user
-    conn = connected(bot, update, chat, user.id, need_admin=False)
-    if conn:
+    if conn := connected(bot, update, chat, user.id, need_admin=False):
         chat_id = conn
         send_id = user.id
     else:
@@ -58,8 +57,7 @@ def get(bot, update, notename, show_none=True, no_format=False):
     if note:
         pass
     elif notename[0] == "#":
-        hashnote = sql.get_note(chat_id, notename[1:])
-        if hashnote:
+        if hashnote := sql.get_note(chat_id, notename[1:]):
             note = hashnote
     elif show_none:
         message.reply_text(tld(chat.id, "note_not_existed"))
@@ -78,11 +76,10 @@ def get(bot, update, notename, show_none=True, no_format=False):
                                     from_chat_id=MESSAGE_DUMP,
                                     message_id=note.value)
             except BadRequest as excp:
-                if excp.message == "Message to forward not found":
-                    message.reply_text(tld(chat.id, "note_lost"))
-                    sql.rm_note(chat_id, notename)
-                else:
+                if excp.message != "Message to forward not found":
                     raise
+                message.reply_text(tld(chat.id, "note_lost"))
+                sql.rm_note(chat_id, notename)
         else:
             try:
                 bot.forward_message(chat_id=chat_id,
@@ -175,8 +172,7 @@ def hash_get(bot: Bot, update: Update):
 def save(bot: Bot, update: Update):
     chat = update.effective_chat
     user = update.effective_user
-    conn = connected(bot, update, chat, user.id)
-    if conn:
+    if conn := connected(bot, update, chat, user.id):
         chat_id = conn
         chat_name = dispatcher.bot.getChat(conn).title
     else:
@@ -227,8 +223,7 @@ def save(bot: Bot, update: Update):
 def clear(bot: Bot, update: Update, args: List[str]):
     chat = update.effective_chat
     user = update.effective_user
-    conn = connected(bot, update, chat, user.id)
-    if conn:
+    if conn := connected(bot, update, chat, user.id):
         chat_id = conn
         chat_name = dispatcher.bot.getChat(conn).title
     else:
@@ -254,8 +249,7 @@ def clear(bot: Bot, update: Update, args: List[str]):
 def list_notes(bot: Bot, update: Update):
     chat = update.effective_chat
     user = update.effective_user
-    conn = connected(bot, update, chat, user.id, need_admin=False)
-    if conn:
+    if conn := connected(bot, update, chat, user.id, need_admin=False):
         chat_id = conn
         chat_name = dispatcher.bot.getChat(conn).title
         msg = tld(chat.id, "note_in_chat")
@@ -296,9 +290,7 @@ def remove_all_notes(bot: Bot, update: Update):
     user = update.effective_user
     message = update.effective_message
 
-    if chat.type == "private":
-        pass
-    else:
+    if chat.type != "private":
         owner = chat.get_member(user.id)
         if owner.status != 'creator':
             message.reply_text(tld(chat.id, "notes_must_be_creator"))

@@ -18,7 +18,7 @@ from telegram.utils.helpers import escape_markdown
 from haruka.modules.helper_funcs.extraction import extract_user
 from haruka.modules.tr_engine.strings import tld, tld_list
 
-WIDE_MAP = dict((i, i + 0xFEE0) for i in range(0x21, 0x7F))
+WIDE_MAP = {i: i + 0xFEE0 for i in range(0x21, 0x7F)}
 WIDE_MAP[0x20] = 0x3000
 
 # D A N K modules by @deletescape vvv
@@ -345,7 +345,7 @@ def deepfryer(bot: Bot, update: Update):
     if data:
         photodata = data[len(data) - 1].get_file().download_as_bytearray()
         image = Image.open(io.BytesIO(photodata))
-    elif data2:
+    else:
         sticker = bot.get_file(data2.file_id)
         sticker.download('sticker.png')
         image = Image.open("sticker.png")
@@ -390,10 +390,12 @@ def shout(bot: Bot, update: Update, args: List[str]):
         data = tld(chat.id, "memes_no_message")
 
     msg = "```"
-    result = []
-    result.append(' '.join([s for s in data]))
-    for pos, symbol in enumerate(data[1:]):
-        result.append(symbol + ' ' + '  ' * pos + symbol)
+    result = [' '.join(list(data))]
+    result.extend(
+        f'{symbol} ' + '  ' * pos + symbol
+        for pos, symbol in enumerate(data[1:])
+    )
+
     result = list("\n".join(result))
     result[0] = data[0]
     result = "".join(result)
@@ -435,8 +437,7 @@ def slap(bot: Bot, update: Update, args: List[str]):
         curr_user = "[{}](tg://user?id={})".format(msg.from_user.first_name,
                                                    msg.from_user.id)
 
-    user_id = extract_user(update.effective_message, args)
-    if user_id:
+    if user_id := extract_user(update.effective_message, args):
         slapped_user = bot.get_chat(user_id)
         user1 = curr_user
         if slapped_user.username == "RealAkito":
@@ -448,7 +449,6 @@ def slap(bot: Bot, update: Update, args: List[str]):
             user2 = "[{}](tg://user?id={})".format(slapped_user.first_name,
                                                    slapped_user.id)
 
-    # if no target found, bot targets the sender
     else:
         user1 = "[{}](tg://user?id={})".format(bot.first_name, bot.id)
         user2 = curr_user

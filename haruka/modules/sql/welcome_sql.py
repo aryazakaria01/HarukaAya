@@ -146,8 +146,9 @@ def add_to_userlist(chat_id, user_id):
 
 def rm_from_userlist(chat_id, user_id):
     with UR_LOCK:
-        user_filt = SESSION.query(UserRestirect).get((str(chat_id), user_id))
-        if user_filt:
+        if user_filt := SESSION.query(UserRestirect).get(
+            (str(chat_id), user_id)
+        ):
             if user_id in CHAT_USERRESTIRECT.get(str(chat_id),
                                                  set()):  # sanity check
                 CHAT_USERRESTIRECT.get(str(chat_id), set()).remove(user_id)
@@ -166,8 +167,7 @@ def get_chat_userlist(chat_id):
 
 def welcome_security(chat_id):
     try:
-        security = SESSION.query(WelcomeSecurity).get(str(chat_id))
-        if security:
+        if security := SESSION.query(WelcomeSecurity).get(str(chat_id)):
             return security.security, security.mute_time, security.custom_text
         else:
             return False, "0", "Click here to prove you're human"
@@ -194,8 +194,9 @@ def set_welcome_security(chat_id, security, mute_time, custom_text):
 
 def clean_service(chat_id: Union[str, int]) -> bool:
     try:
-        chat_setting = SESSION.query(CleanServiceSetting).get(str(chat_id))
-        if chat_setting:
+        if chat_setting := SESSION.query(CleanServiceSetting).get(
+            str(chat_id)
+        ):
             return chat_setting.clean_service
         return False
     finally:
@@ -393,8 +394,7 @@ def get_gdbye_buttons(chat_id):
 
 def migrate_chat(old_chat_id, new_chat_id):
     with INSERTION_LOCK:
-        chat = SESSION.query(Welcome).get(str(old_chat_id))
-        if chat:
+        if chat := SESSION.query(Welcome).get(str(old_chat_id)):
             chat.chat_id = str(new_chat_id)
 
         with WELC_BTN_LOCK:

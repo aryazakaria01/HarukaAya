@@ -254,8 +254,9 @@ def phh(bot: Bot, update: Update, args: List[str]):
     chat = update.effective_chat  # type: Optional[Chat]
 
     usr = get(
-        f'https://api.github.com/repos/phhusson/treble_experimentations/releases/latest'
+        'https://api.github.com/repos/phhusson/treble_experimentations/releases/latest'
     ).json()
+
     reply_text = tld(chat.id, "cust_releases").format(romname)
     for i in range(len(usr)):
         try:
@@ -270,10 +271,7 @@ def phh(bot: Bot, update: Update, args: List[str]):
 @run_async
 def getaex(bot: Bot, update: Update, args: List[str]):
     message = update.effective_message
-    chat = update.effective_chat  # type: Optional[Chat]
-
-    AEX_OTA_API = "https://api.aospextended.com/ota/"
-
+    chat = update.effective_chat
     if len(args) != 2:
         reply_text = tld(chat.id, "aex_cust_str")
         message.reply_text(reply_text,
@@ -283,18 +281,20 @@ def getaex(bot: Bot, update: Update, args: List[str]):
 
     device = args[0]
     version = args[1]
-    res = get(AEX_OTA_API + device + '/' + version.lower())
+    res = get(f'https://api.aospextended.com/ota/{device}/' + version.lower())
     if res.status_code == 200:
         apidata = json.loads(res.text)
         if apidata.get('error'):
             message.reply_text(tld(chat.id, "err_not_found"))
-            return
         else:
             developer = apidata.get('developer')
             developer_url = apidata.get('developer_url')
             filename = apidata.get('filename')
-            url = "https://downloads.aospextended.com/download/" + device + "/" + version + "/" + apidata.get(
-                'filename')
+            url = (
+                f'https://downloads.aospextended.com/download/{device}/{version}/'
+                + apidata.get('filename')
+            )
+
             builddate = datetime.strptime(apidata.get('build_date'),
                                           "%Y%m%d-%H%M").strftime("%d %B %Y")
             buildsize = sizee(int(apidata.get('filesize')))
@@ -313,7 +313,7 @@ def getaex(bot: Bot, update: Update, args: List[str]):
                                reply_markup=InlineKeyboardMarkup(keyboard),
                                parse_mode=ParseMode.MARKDOWN,
                                disable_web_page_preview=True)
-            return
+        return
     else:
         message.reply_text(tld(chat.id, "err_not_found"))
 
@@ -336,37 +336,24 @@ def bootleggers(bot: Bot, update: Update):
     if fetch.status_code == 200:
         nestedjson = fetch.json()
 
-        if codename.lower() == 'x00t':
-            devicetoget = 'X00T'
-        else:
-            devicetoget = codename.lower()
-
+        devicetoget = 'X00T' if codename.lower() == 'x00t' else codename.lower()
         reply_text = ""
-        devices = {}
-
-        for device, values in nestedjson.items():
-            devices.update({device: values})
+        devices = dict(nestedjson.items())
 
         if devicetoget in devices:
+            dontneedlist = ['id', 'filename', 'download', 'xdathread']
+            peaksmod = {
+                'fullname': 'Device name',
+                'buildate': 'Build date',
+                'buildsize': 'Build size',
+                'downloadfolder': 'SourceForge folder',
+                'mirrorlink': 'Mirror link',
+                'xdathread': 'XDA thread'
+            }
             for oh, baby in devices[devicetoget].items():
-                dontneedlist = ['id', 'filename', 'download', 'xdathread']
-                peaksmod = {
-                    'fullname': 'Device name',
-                    'buildate': 'Build date',
-                    'buildsize': 'Build size',
-                    'downloadfolder': 'SourceForge folder',
-                    'mirrorlink': 'Mirror link',
-                    'xdathread': 'XDA thread'
-                }
                 if baby and oh not in dontneedlist:
-                    if oh in peaksmod:
-                        oh = peaksmod[oh]
-                    else:
-                        oh = oh.title()
-
-                    if oh == 'SourceForge folder':
-                        reply_text += f"\n*{oh}:* [Here]({baby})"
-                    elif oh == 'Mirror link':
+                    oh = peaksmod.get(oh, oh.title())
+                    if oh in ['SourceForge folder', 'Mirror link']:
                         reply_text += f"\n*{oh}:* [Here]({baby})"
                     else:
                         reply_text += f"\n*{oh}:* `{baby}`"
