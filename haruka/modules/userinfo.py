@@ -20,14 +20,8 @@ def about_me(bot: Bot, update: Update, args: List[str]):
     user_id = extract_user(message, args)
     chat = update.effective_chat
 
-    if user_id:
-        user = bot.get_chat(user_id)
-    else:
-        user = message.from_user
-
-    info = sql.get_user_me_info(user.id)
-
-    if info:
+    user = bot.get_chat(user_id) if user_id else message.from_user
+    if info := sql.get_user_me_info(user.id):
         update.effective_message.reply_text("*{}*:\n{}".format(
             user.first_name, escape_markdown(info)),
                                             parse_mode=ParseMode.MARKDOWN)
@@ -64,15 +58,12 @@ def set_about_me(bot: Bot, update: Update):
 def about_bio(bot: Bot, update: Update, args: List[str]):
     message = update.effective_message
     chat = update.effective_chat
-    user_id = extract_user(message, args)
-    if user_id:
+    if user_id := extract_user(message, args):
         user = bot.get_chat(user_id)
     else:
         user = message.from_user
 
-    info = sql.get_user_bio(user.id)
-
-    if info:
+    if info := sql.get_user_bio(user.id):
         update.effective_message.reply_text("*{}*:\n{}".format(
             user.first_name, escape_markdown(info)),
                                             parse_mode=ParseMode.MARKDOWN)

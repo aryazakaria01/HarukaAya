@@ -114,8 +114,7 @@ def info(bot: Bot, update: Update, args: List[str]):
                 text += tld(chat.id, "misc_info_is_whitelisted")
 
     for mod in USER_INFO:
-        mod_info = mod.__user_info__(user.id, chat.id).strip()
-        if mod_info:
+        if mod_info := mod.__user_info__(user.id, chat.id).strip():
             text += "\n\n" + mod_info
 
     update.effective_message.reply_text(text, parse_mode=ParseMode.HTML)
@@ -134,8 +133,7 @@ def echo(bot: Bot, update: Update):
 
 @run_async
 def reply_keyboard_remove(bot: Bot, update: Update):
-    reply_keyboard = []
-    reply_keyboard.append([ReplyKeyboardRemove(remove_keyboard=True)])
+    reply_keyboard = [[ReplyKeyboardRemove(remove_keyboard=True)]]
     reply_markup = ReplyKeyboardRemove(remove_keyboard=True)
     old_message = bot.send_message(
         chat_id=update.message.chat_id,
@@ -201,12 +199,8 @@ def github(bot: Bot, update: Update):
 
         for x, y in usr.items():
             if x in whitelist:
-                if x in difnames:
-                    x = difnames[x]
-                else:
-                    x = x.title()
-
-                if x == 'Account created at' or x == 'Last updated':
+                x = difnames.get(x, x.title())
+                if x in ['Account created at', 'Last updated']:
                     y = datetime.strptime(y, "%Y-%m-%dT%H:%M:%SZ")
 
                 if y not in goaway:
@@ -278,7 +272,7 @@ def get_paste_content(bot: Bot, update: Update, args: List[str]):
     message = update.effective_message
     chat = update.effective_chat  # type: Optional[Chat]
 
-    if len(args) >= 1:
+    if args:
         key = args[0]
     else:
         message.reply_text(tld(chat.id, "misc_get_paste_invalid"))
@@ -318,7 +312,7 @@ def get_paste_stats(bot: Bot, update: Update, args: List[str]):
     message = update.effective_message
     chat = update.effective_chat  # type: Optional[Chat]
 
-    if len(args) >= 1:
+    if args:
         key = args[0]
     else:
         message.reply_text(tld(chat.id, "misc_get_paste_invalid"))
@@ -368,7 +362,7 @@ def ud(bot: Bot, update: Update):
 def wiki(bot: Bot, update: Update):
     kueri = re.split(pattern="wiki", string=update.effective_message.text)
     wikipedia.set_lang("en")
-    if len(str(kueri[1])) == 0:
+    if not str(kueri[1]):
         update.effective_message.reply_text("Enter keywords!")
     else:
         try:

@@ -70,9 +70,7 @@ def warn(user: User,
             InlineKeyboardButton(tld(chat.id, 'warns_btn_remove_warn'),
                                  callback_data="rm_warn({})".format(user.id))
         ]]
-        rules = rules_sql.get_rules(chat.id)
-
-        if rules:
+        if rules := rules_sql.get_rules(chat.id):
             keyboard[0].append(
                 InlineKeyboardButton(tld(chat.id, 'warns_btn_rules'),
                                      url="t.me/{}?start={}".format(
@@ -112,15 +110,13 @@ def rmwarn_handler(bot: Bot, update: Update) -> str:
     chat = update.effective_chat
     query = update.callback_query
     user = update.effective_user
-    match = re.match(r"rm_warn\((.+?)\)", query.data)
-    if match:
+    if match := re.match(r"rm_warn\((.+?)\)", query.data):
         user_id = match.group(1)
         if not is_user_admin(chat, int(user.id)):
             query.answer(text=tld(chat.id, 'warns_remove_admin_only'),
                          show_alert=True)
             return ""
-        res = sql.remove_warn(user_id, chat.id)
-        if res:
+        if res := sql.remove_warn(user_id, chat.id):
             update.effective_message.edit_text(tld(
                 chat.id, 'warns_remove_success').format(
                     mention_html(user.id, user.first_name)),
@@ -147,8 +143,7 @@ def sendrules_handler(bot: Bot, update: Update) -> str:
     query = update.callback_query
     print(query)
     print(query.data)
-    match = re.match(r"send_rules\((.+?)\)", query.data)
-    if match:
+    if match := re.match(r"send_rules\((.+?)\)", query.data):
         chat_id = match.group(1)
         send_rules(update, chat_id, True)
 
@@ -164,9 +159,7 @@ def remove_warns(bot: Bot, update: Update, args: List[str]) -> str:
     chat = update.effective_chat
     user = update.effective_user
 
-    user_id = extract_user(message, args)
-
-    if user_id:
+    if user_id := extract_user(message, args):
         sql.remove_warn(user_id, chat.id)
         message.reply_text(tld(chat.id, 'warns_latest_remove_success'))
         warned = chat.get_member(user_id).user
@@ -210,9 +203,7 @@ def reset_warns(bot: Bot, update: Update, args: List[str]) -> str:
     chat = update.effective_chat
     user = update.effective_user
 
-    user_id = extract_user(message, args)
-
-    if user_id:
+    if user_id := extract_user(message, args):
         sql.reset_warns(user_id, chat.id)
         message.reply_text(tld(chat.id, 'warns_reset_success'))
         warned = chat.get_member(user_id).user
@@ -230,18 +221,14 @@ def warns(bot: Bot, update: Update, args: List[str]):
     chat = update.effective_chat
     user_id = extract_user(message, args) or update.effective_user.id
     result = sql.get_warns(user_id, chat.id)
-    num = 1
-
     if result and result[0] != 0:
         num_warns, reasons = result
         limit, soft_warn = sql.get_warn_setting(chat.id)
 
         if reasons:
             text = tld(chat.id, 'warns_list_warns').format(num_warns, limit)
-            for reason in reasons:
+            for num, reason in enumerate(reasons, start=1):
                 text += "\n {}. {}".format(num, reason)
-                num += 1
-
             msgs = split_message(text)
             for msg in msgs:
                 update.effective_message.reply_text(msg)
@@ -269,13 +256,12 @@ def add_warn_filter(bot: Bot, update: Update):
 
     extracted = split_quotes(args[1])
 
-    if len(extracted) >= 2:
-        # set trigger -> lower, so as to avoid adding duplicate filters with different cases
-        keyword = extracted[0].lower()
-        content = extracted[1]
-
-    else:
+    if len(extracted) < 2:
         return
+
+    # set trigger -> lower, so as to avoid adding duplicate filters with different cases
+    keyword = extracted[0].lower()
+    content = extracted[1]
 
     # Note: perhaps handlers can be removed somehow using sql.get_chat_filters
     for handler in dispatcher.handlers.get(WARN_HANDLER_GROUP, []):
@@ -343,7 +329,7 @@ def list_warn_filters(bot: Bot, update: Update):
         else:
             filter_list += entry
 
-    if not filter_list == tld(chat.id, 'warns_filters_list'):
+    if filter_list != tld(chat.id, 'warns_filters_list'):
         update.effective_message.reply_text(filter_list,
                                             parse_mode=ParseMode.HTML)
 
@@ -421,14 +407,12 @@ def set_warn_strength(bot: Bot, update: Update, args: List[str]):
 
         else:
             msg.reply_text(tld(chat.id, 'warns_strength_invalid_arg'))
+    elif soft_warn := sql.get_soft_warn(chat.id):
+        msg.reply_text(tld(chat.id, 'warns_strength_off'),
+                       parse_mode=ParseMode.MARKDOWN)
     else:
-        soft_warn = sql.get_soft_warn(chat.id)
-        if soft_warn:
-            msg.reply_text(tld(chat.id, 'warns_strength_off'),
-                           parse_mode=ParseMode.MARKDOWN)
-        else:
-            msg.reply_text(tld(chat.id, 'warns_strength_on'),
-                           parse_mode=ParseMode.MARKDOWN)
+        msg.reply_text(tld(chat.id, 'warns_strength_on'),
+                       parse_mode=ParseMode.MARKDOWN)
     return ""
 
 
